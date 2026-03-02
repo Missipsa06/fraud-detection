@@ -1,24 +1,34 @@
+import json
 import mlflow
 import mlflow.sklearn
 
 from .data import load_data, split_data
 from .model import train_model, predict_proba
 from .evaluation import find_best_threshold, evaluate_model
-from .config import MODEL_PARAMS
+from .config import MODEL_PARAMS, BEST_PARAMS_PATH
+
+
+def load_params():
+    if BEST_PARAMS_PATH.exists():
+        with open(BEST_PARAMS_PATH) as f:
+            print("Paramètres tuning chargés.")
+            return json.load(f)
+    return MODEL_PARAMS
 
 def run_pipeline():
 
     df = load_data()
     X_train, X_val, y_train, y_val = split_data(df)
+    params = load_params()
 
     with mlflow.start_run():
 
         # Log params
-        for k, v in MODEL_PARAMS.items():
+        for k, v in params.items():
             mlflow.log_param(k, v)
 
         # Train
-        model = train_model(X_train, y_train)
+        model = train_model(X_train, y_train, params)
 
         # Predict
         y_proba = predict_proba(model, X_val)

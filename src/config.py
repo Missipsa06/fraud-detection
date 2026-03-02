@@ -18,3 +18,6 @@ RANDOM_STATE = 42
 
 # Business constraint
 MIN_PRECISION = 0.4
+
+# Tuning
+BEST_PARAMS_PATH = BASE_DIR / "best_params.json"
