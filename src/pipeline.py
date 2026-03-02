@@ -1,0 +1,48 @@
+import mlflow
+import mlflow.sklearn
+
+from .data import load_data, split_data
+from .model import train_model, predict_proba
+from .evaluation import find_best_threshold, evaluate_model
+from .config import MODEL_PARAMS
+
+def run_pipeline():
+
+    df = load_data()
+    X_train, X_val, y_train, y_val = split_data(df)
+
+    with mlflow.start_run():
+
+        # Log params
+        for k, v in MODEL_PARAMS.items():
+            mlflow.log_param(k, v)
+
+        # Train
+        model = train_model(X_train, y_train)
+
+        # Predict
+        y_proba = predict_proba(model, X_val)
+
+        # Threshold tuning
+        threshold = find_best_threshold(y_val, y_proba)
+        mlflow.log_param("threshold", threshold)
+
+        # Evaluate
+        report, pr_auc = evaluate_model(y_val, y_proba, threshold)
+
+        mlflow.log_metric("recall", report["1"]["recall"])
+        mlflow.log_metric("precision", report["1"]["precision"])
+        mlflow.log_metric("pr_auc", pr_auc)
+
+        # Log model
+        mlflow.sklearn.log_model(model, "model")
+
+        print("Recall:", report["1"]["recall"])
+        print("Precision:", report["1"]["precision"])
+        print("PR-AUC:", pr_auc)
+        print("Threshold:", threshold)
+
+
+
+if __name__ == "__main__":
+    run_pipeline()
