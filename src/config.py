@@ -21,3 +21,8 @@ MIN_PRECISION = 0.4
 
 # Tuning
 BEST_PARAMS_PATH = BASE_DIR / "best_params.json"
+
+# Artifacts (modèle sérialisé pour l'API)
+ARTIFACTS_DIR  = BASE_DIR / "artifacts"
+MODEL_PATH     = ARTIFACTS_DIR / "model.joblib"
+THRESHOLD_PATH = ARTIFACTS_DIR / "threshold.json"

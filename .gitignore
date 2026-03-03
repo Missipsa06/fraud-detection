@@ -5,6 +5,9 @@ data/
 mlruns/
 reports/
 
+# Artifacts (modèle sérialisé)
+artifacts/
+
 # Python
 __pycache__/
 *.pyc

@@ -1,0 +1,77 @@
+import json
+import joblib
+import pandas as pd
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+from .data import load_data, split_data
+from .model import predict_proba
+from .features import build_features
+from .config import MODEL_PATH, THRESHOLD_PATH
+
+app = FastAPI(title="Fraud Detection API")
+
+# État global chargé au démarrage
+_state = {}
+
+
+@app.on_event("startup")
+def load_artifacts():
+    if not MODEL_PATH.exists() or not THRESHOLD_PATH.exists():
+        raise RuntimeError(
+            "Artifacts introuvables. Lance d'abord : python -m src.serve"
+        )
+    _state["model"] = joblib.load(MODEL_PATH)
+    with open(THRESHOLD_PATH) as f:
+        _state["threshold"] = json.load(f)["threshold"]
+
+    # Garder X_val et y_val en mémoire pour /sample
+    df = load_data()
+    _, X_val, _, y_val = split_data(df)
+    _state["X_val"] = X_val.reset_index(drop=True)
+    _state["y_val"] = y_val.reset_index(drop=True)
+
+
+class Transaction(BaseModel):
+    Time: float
+    Amount: float
+    V1: float; V2: float; V3: float; V4: float
+    V5: float; V6: float; V7: float; V8: float
+    V9: float; V10: float; V11: float; V12: float
+    V13: float; V14: float; V15: float; V16: float
+    V17: float; V18: float; V19: float; V20: float
+    V21: float; V22: float; V23: float; V24: float
+    V25: float; V26: float; V27: float; V28: float
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.post("/predict")
+def predict(tx: Transaction):
+    df = pd.DataFrame([tx.model_dump()])
+    df = build_features(df)
+    score = float(predict_proba(_state["model"], df)[0])
+    fraud = score >= _state["threshold"]
+    return {"fraud": fraud, "score": round(score, 4)}
+
+
+@app.get("/sample")
+def sample(fraud: bool = False):
+    """
+    Retourne une transaction réelle du jeu de validation.
+    ?fraud=true  → exemple de fraude confirmée
+    ?fraud=false → exemple de transaction légitime (défaut)
+    """
+    X_val = _state["X_val"]
+    y_val = _state["y_val"]
+
+    target = 1 if fraud else 0
+    indices = y_val[y_val == target].index.tolist()
+    if not indices:
+        raise HTTPException(status_code=404, detail="Aucun exemple trouvé.")
+
+    row = X_val.loc[indices[0], ["Time", "Amount"] + [f"V{i}" for i in range(1, 29)]]
+    return row.to_dict()

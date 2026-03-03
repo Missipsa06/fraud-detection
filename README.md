@@ -13,6 +13,7 @@ Placer le fichier `creditcard.csv` dans `data/raw/`.
 ```
 fraud_detection/
 ├── data/raw/              ← dataset (non versionné)
+├── artifacts/             ← modèle sérialisé (non versionné)
 ├── src/
 │   ├── config.py          ← paramètres centralisés
 │   ├── data.py            ← chargement et split
@@ -20,7 +21,13 @@ fraud_detection/
 │   ├── model.py           ← entraînement LightGBM
 │   ├── evaluation.py      ← métriques et optimisation du seuil
 │   ├── tuning.py          ← tuning Optuna + cross-validation
-│   └── pipeline.py        ← orchestration
+│   ├── pipeline.py        ← orchestration + tracking MLflow
+│   ├── serve.py           ← sauvegarde du modèle pour l'API
+│   └── api.py             ← API REST FastAPI
+├── tests/
+│   ├── test_features.py   ← tests unitaires feature engineering
+│   ├── test_evaluation.py ← tests unitaires évaluation
+│   └── test_data.py       ← tests unitaires split
 ├── exploration.ipynb      ← visualisations
 ├── best_params.json       ← meilleurs paramètres (généré par tuning)
 └── requirements.txt
@@ -76,6 +83,50 @@ Le module `src/tuning.py` utilise **Optuna** pour optimiser les hyperparamètres
 - Objectif : maximiser le **PR-AUC** moyen sur 5 folds
 - Paramètres explorés : `n_estimators`, `learning_rate`, `num_leaves`, `min_child_samples`, `subsample`, `colsample_bytree`
 - Évaluation : **StratifiedKFold** (5 folds) pour garantir la représentation des fraudes dans chaque fold
+
+## API REST
+
+Le modèle est exposé via une API FastAPI permettant de scorer des transactions en temps réel.
+
+### Démarrage
+
+```bash
+# 1. Sauvegarder le modèle entraîné
+python -m src.serve
+
+# 2. Lancer l'API
+uvicorn src.api:app --reload
+```
+
+### Endpoints
+
+| Méthode | Route | Description |
+|---|---|---|
+| `GET` | `/health` | Vérifie que l'API est up |
+| `GET` | `/sample` | Retourne une transaction du jeu de validation |
+| `GET` | `/sample?fraud=true` | Retourne un exemple de fraude |
+| `POST` | `/predict` | Score une transaction |
+
+### Exemple
+
+```bash
+# Récupérer un exemple de fraude
+GET http://127.0.0.1:8000/sample?fraud=true
+
+# Le soumettre au modèle
+POST http://127.0.0.1:8000/predict
+→ { "fraud": true, "score": 0.9341 }
+```
+
+L'interface Swagger interactive est disponible sur **http://127.0.0.1:8000/docs**.
+
+## Tests unitaires
+
+```bash
+pytest tests/ -v
+```
+
+17 tests couvrant `build_features`, `find_best_threshold`, `evaluate_model` et `split_data` — sans dépendance au dataset.
 
 ## Contrainte métier
 
