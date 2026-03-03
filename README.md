@@ -69,7 +69,7 @@ mlflow ui
 
 Puis ouvrir **http://127.0.0.1:5000**.
 
-## Features engineerées
+## Features engineering
 
 | Feature | Description |
 |---|---|
