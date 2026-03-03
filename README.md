@@ -30,6 +30,8 @@ fraud_detection/
 │   └── test_data.py       ← tests unitaires split
 ├── exploration.ipynb      ← visualisations
 ├── best_params.json       ← meilleurs paramètres (généré par tuning)
+├── Dockerfile
+├── docker-compose.yml
 └── requirements.txt
 ```
 
@@ -119,6 +121,39 @@ POST http://127.0.0.1:8000/predict
 ```
 
 L'interface Swagger interactive est disponible sur **http://127.0.0.1:8000/docs**.
+
+## Docker
+
+### Prérequis
+Avoir généré les artifacts au préalable :
+```bash
+python -m src.serve
+```
+
+### Build et lancement
+```bash
+docker compose up --build
+```
+
+L'API est disponible sur **http://localhost:8000/docs**.
+
+```bash
+# En arrière-plan
+docker compose up --build -d
+
+# Arrêt
+docker compose down
+```
+
+## Monitoring (Data Drift)
+
+Détecte si les distributions des features en production dérivent par rapport aux données d'entraînement.
+
+```bash
+python -m src.monitoring
+```
+
+Génère `reports/drift_report.html` — ouvrir dans le navigateur pour visualiser le rapport interactif Evidently : statut drift par feature, distributions comparées, p-values.
 
 ## Tests unitaires
 

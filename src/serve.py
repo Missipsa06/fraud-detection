@@ -11,7 +11,9 @@ from .data import load_data, split_data
 from .model import train_model, predict_proba
 from .evaluation import find_best_threshold
 from .pipeline import load_params
-from .config import ARTIFACTS_DIR, MODEL_PATH, THRESHOLD_PATH
+from .config import ARTIFACTS_DIR, MODEL_PATH, THRESHOLD_PATH, SAMPLES_PATH
+
+COLS = ["Time", "Amount"] + [f"V{i}" for i in range(1, 29)]
 
 
 def save_artifacts():
@@ -31,8 +33,21 @@ def save_artifacts():
     with open(THRESHOLD_PATH, "w") as f:
         json.dump({"threshold": threshold}, f)
 
+    # Sauvegarder quelques exemples pour le endpoint /sample
+    X_val = X_val.reset_index(drop=True)
+    y_val = y_val.reset_index(drop=True)
+    legit_idx  = y_val[y_val == 0].index[:5].tolist()
+    fraud_idx  = y_val[y_val == 1].index[:5].tolist()
+    samples = {
+        "legit": X_val.loc[legit_idx, COLS].to_dict(orient="records"),
+        "fraud": X_val.loc[fraud_idx, COLS].to_dict(orient="records"),
+    }
+    with open(SAMPLES_PATH, "w") as f:
+        json.dump(samples, f)
+
     print(f"Modèle sauvegardé      : {MODEL_PATH}")
     print(f"Threshold sauvegardé   : {THRESHOLD_PATH}  ({threshold:.4f})")
+    print(f"Exemples sauvegardés   : {SAMPLES_PATH}")
 
 
 if __name__ == "__main__":

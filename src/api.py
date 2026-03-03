@@ -4,10 +4,9 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from .data import load_data, split_data
 from .model import predict_proba
 from .features import build_features
-from .config import MODEL_PATH, THRESHOLD_PATH
+from .config import MODEL_PATH, THRESHOLD_PATH, SAMPLES_PATH
 
 app = FastAPI(title="Fraud Detection API")
 
@@ -24,12 +23,8 @@ def load_artifacts():
     _state["model"] = joblib.load(MODEL_PATH)
     with open(THRESHOLD_PATH) as f:
         _state["threshold"] = json.load(f)["threshold"]
-
-    # Garder X_val et y_val en mémoire pour /sample
-    df = load_data()
-    _, X_val, _, y_val = split_data(df)
-    _state["X_val"] = X_val.reset_index(drop=True)
-    _state["y_val"] = y_val.reset_index(drop=True)
+    with open(SAMPLES_PATH) as f:
+        _state["samples"] = json.load(f)
 
 
 class Transaction(BaseModel):
@@ -65,13 +60,8 @@ def sample(fraud: bool = False):
     ?fraud=true  → exemple de fraude confirmée
     ?fraud=false → exemple de transaction légitime (défaut)
     """
-    X_val = _state["X_val"]
-    y_val = _state["y_val"]
-
-    target = 1 if fraud else 0
-    indices = y_val[y_val == target].index.tolist()
-    if not indices:
+    key = "fraud" if fraud else "legit"
+    examples = _state["samples"][key]
+    if not examples:
         raise HTTPException(status_code=404, detail="Aucun exemple trouvé.")
-
-    row = X_val.loc[indices[0], ["Time", "Amount"] + [f"V{i}" for i in range(1, 29)]]
-    return row.to_dict()
+    return examples[0]
