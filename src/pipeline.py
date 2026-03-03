@@ -1,4 +1,6 @@
 import json
+import warnings
+warnings.filterwarnings("ignore")
 import mlflow
 import mlflow.sklearn
 
