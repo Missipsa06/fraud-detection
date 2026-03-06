@@ -1,6 +1,7 @@
 import json
 import joblib
 import pandas as pd
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -8,14 +9,12 @@ from .model import predict_proba
 from .features import build_features
 from .config import MODEL_PATH, THRESHOLD_PATH, SAMPLES_PATH
 
-app = FastAPI(title="Fraud Detection API")
-
 # État global chargé au démarrage
 _state = {}
 
 
-@app.on_event("startup")
-def load_artifacts():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     if not MODEL_PATH.exists() or not THRESHOLD_PATH.exists():
         raise RuntimeError(
             "Artifacts introuvables. Lance d'abord : python -m src.serve"
@@ -25,6 +24,10 @@ def load_artifacts():
         _state["threshold"] = json.load(f)["threshold"]
     with open(SAMPLES_PATH) as f:
         _state["samples"] = json.load(f)
+    yield
+
+
+app = FastAPI(title="Fraud Detection API", lifespan=lifespan)
 
 
 class Transaction(BaseModel):
