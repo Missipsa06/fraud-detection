@@ -27,7 +27,8 @@ fraud_detection/
 ├── tests/
 │   ├── test_features.py   ← tests unitaires feature engineering
 │   ├── test_evaluation.py ← tests unitaires évaluation
-│   └── test_data.py       ← tests unitaires split
+│   ├── test_data.py       ← tests unitaires split
+│   └── test_api.py        ← tests unitaires API REST
 ├── exploration.ipynb      ← visualisations
 ├── best_params.json       ← meilleurs paramètres (généré par tuning)
 ├── Dockerfile
@@ -153,7 +154,9 @@ Détecte si les distributions des features en production dérivent par rapport a
 python -m src.monitoring
 ```
 
-Génère `reports/drift_report.html` — ouvrir dans le navigateur pour visualiser le rapport interactif Evidently : statut drift par feature, distributions comparées, p-values.
+Génère `reports/drift_report.html` — ouvrir dans le navigateur pour visualiser le rapport : statut drift par feature, statistique KS et p-value.
+
+La détection utilise le **test de Kolmogorov-Smirnov** par feature (p-value < 0.05 et KS stat ≥ 0.1). La séparation est chronologique : les 80% premières transactions servent de référence, les 20% les plus récentes simulent la production.
 
 ## Tests unitaires
 
@@ -161,7 +164,7 @@ Génère `reports/drift_report.html` — ouvrir dans le navigateur pour visualis
 pytest tests/ -v
 ```
 
-17 tests couvrant `build_features`, `find_best_threshold`, `evaluate_model` et `split_data` — sans dépendance au dataset.
+27 tests couvrant `build_features`, `find_best_threshold`, `evaluate_model`, `split_data` et les endpoints API — sans dépendance au dataset.
 
 ## Contrainte métier
 
