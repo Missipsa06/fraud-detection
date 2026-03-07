@@ -51,6 +51,7 @@ def health():
 def predict(tx: Transaction):
     df = pd.DataFrame([tx.model_dump()])
     df = build_features(df)
+    df = df[_state["model"].feature_name_]
     score = float(predict_proba(_state["model"], df)[0])
     fraud = score >= _state["threshold"]
     return {"fraud": fraud, "score": round(score, 4)}

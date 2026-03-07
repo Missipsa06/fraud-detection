@@ -34,10 +34,15 @@ def save_artifacts():
         json.dump({"threshold": threshold}, f)
 
     # Sauvegarder quelques exemples pour le endpoint /sample
+    import pandas as pd
     X_val = X_val.reset_index(drop=True)
     y_val = y_val.reset_index(drop=True)
-    legit_idx  = y_val[y_val == 0].index[:5].tolist()
-    fraud_idx  = y_val[y_val == 1].index[:5].tolist()
+    y_proba_s = pd.Series(y_proba, index=X_val.index)
+
+    # Légitimes : les 5 avec le score le plus bas (plus sûrement légitimes)
+    legit_idx = y_proba_s[y_val == 0].nsmallest(5).index.tolist()
+    # Fraudes : les 5 avec le score le plus élevé (mieux détectées)
+    fraud_idx = y_proba_s[y_val == 1].nlargest(5).index.tolist()
     samples = {
         "legit": X_val.loc[legit_idx, COLS].to_dict(orient="records"),
         "fraud": X_val.loc[fraud_idx, COLS].to_dict(orient="records"),
