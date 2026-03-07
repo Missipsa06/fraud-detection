@@ -3,6 +3,7 @@ data/
 
 # MLflow
 mlruns/
+mlflow.db
 reports/
 
 # Artifacts (modèle sérialisé)
