@@ -1,0 +1,28 @@
+# Data
+data/
+
+# MLflow
+mlruns/
+mlflow.db
+reports/
+
+# Artifacts (modèle sérialisé)
+artifacts/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation
+DOCUMENTATION.md
+USAGE.md
+fraud_detection.code-workspace

@@ -1,0 +1,14 @@
+pandas==2.3.3
+scikit-learn==1.8.0
+lightgbm==4.6.0
+mlflow==3.9.0
+matplotlib==3.10.8
+optuna==4.2.1
+pytest==8.3.5
+fastapi==0.115.12
+uvicorn==0.34.0
+joblib==1.4.2
+scipy>=1.13
+httpx>=0.27
+streamlit>=1.35
+huggingface_hub>=0.23
