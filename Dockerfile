@@ -11,6 +11,7 @@ COPY src/ ./src/
 COPY best_params.json .
 COPY app.py .
 COPY start.sh .
+COPY .streamlit/ ./.streamlit/
 
 RUN chmod +x start.sh
 
