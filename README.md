@@ -17,29 +17,42 @@ Détection de fraudes bancaires avec LightGBM, feature engineering, optimisation
 
 Placer le fichier `creditcard.csv` dans `data/raw/`.
 
+## Demo
+
+L'application est déployée sur **Hugging Face Spaces** : [fraud-detection](https://huggingface.co/spaces/missipsa/fraud-detection)
+
+3 pages disponibles :
+- **Prédiction manuelle** — saisir ou charger un exemple (légitime/fraude), obtenir un score avec jauge visuelle
+- **Analyse batch** — upload CSV, scoring en lot, tableau coloré et export des résultats
+- **Monitoring drift** — détection de dérive des distributions via test de Kolmogorov-Smirnov
+
 ## Structure
 
 ```
 fraud_detection/
-├── data/raw/              ← dataset (non versionné)
-├── artifacts/             ← modèle sérialisé (non versionné)
+├── data/raw/                ← dataset (non versionné)
+├── artifacts/               ← modèle sérialisé (non versionné)
 ├── src/
-│   ├── config.py          ← paramètres centralisés
-│   ├── data.py            ← chargement et split
-│   ├── features.py        ← feature engineering
-│   ├── model.py           ← entraînement LightGBM
-│   ├── evaluation.py      ← métriques et optimisation du seuil
-│   ├── tuning.py          ← tuning Optuna + cross-validation
-│   ├── pipeline.py        ← orchestration + tracking MLflow
-│   ├── serve.py           ← sauvegarde du modèle pour l'API
-│   └── api.py             ← API REST FastAPI
+│   ├── config.py            ← paramètres centralisés
+│   ├── data.py              ← chargement et split
+│   ├── features.py          ← feature engineering
+│   ├── model.py             ← entraînement LightGBM
+│   ├── evaluation.py        ← métriques et optimisation du seuil
+│   ├── tuning.py            ← tuning Optuna + cross-validation
+│   ├── pipeline.py          ← orchestration + tracking MLflow
+│   ├── serve.py             ← sauvegarde du modèle pour l'API
+│   └── api.py               ← API REST FastAPI
 ├── tests/
-│   ├── test_features.py   ← tests unitaires feature engineering
-│   ├── test_evaluation.py ← tests unitaires évaluation
-│   ├── test_data.py       ← tests unitaires split
-│   └── test_api.py        ← tests unitaires API REST
-├── exploration.ipynb      ← visualisations
-├── best_params.json       ← meilleurs paramètres (généré par tuning)
+│   ├── test_features.py     ← tests unitaires feature engineering
+│   ├── test_evaluation.py   ← tests unitaires évaluation
+│   ├── test_data.py         ← tests unitaires split
+│   └── test_api.py          ← tests unitaires API REST
+├── app.py                   ← interface Streamlit (3 pages)
+├── start.sh                 ← script de démarrage (FastAPI + Streamlit)
+├── .streamlit/config.toml   ← configuration Streamlit
+├── test_transactions.csv    ← 10 exemples pour tester le batch
+├── exploration.ipynb        ← visualisations
+├── best_params.json         ← meilleurs paramètres (généré par tuning)
 ├── Dockerfile
 ├── docker-compose.yml
 └── requirements.txt
@@ -132,28 +145,48 @@ POST http://127.0.0.1:8000/predict
 
 L'interface Swagger interactive est disponible sur **http://127.0.0.1:8000/docs**.
 
+## Interface Streamlit
+
+L'interface permet d'interagir avec le modèle sans écrire de code.
+
+```bash
+# Lancer FastAPI + Streamlit en local
+./start.sh
+```
+
+Ou séparément :
+```bash
+uvicorn src.api:app --port 8000 &
+streamlit run app.py
+```
+
+Un fichier `test_transactions.csv` (5 légitimes + 5 fraudes) est fourni pour tester la page batch.
+
 ## Docker
 
-### Prérequis
-Avoir généré les artifacts au préalable :
+### Local
 ```bash
+# Générer les artifacts
 python -m src.serve
-```
 
-### Build et lancement
-```bash
+# Build et lancement
 docker compose up --build
-```
 
-L'API est disponible sur **http://localhost:8000/docs**.
-
-```bash
 # En arrière-plan
 docker compose up --build -d
 
 # Arrêt
 docker compose down
 ```
+
+L'API est disponible sur **http://localhost:8000/docs**.
+
+### Hugging Face Spaces
+
+Le Dockerfile est configuré pour le déploiement sur HF Spaces :
+- Le modèle est téléchargé depuis [HF Model Hub](https://huggingface.co/missipsa/fraud-detection-model) au build
+- FastAPI (port 8000) + Streamlit (port 7860) démarrent via `start.sh`
+- Port 7860 exposé (requis par HF Spaces)
 
 ## Monitoring (Data Drift)
 
